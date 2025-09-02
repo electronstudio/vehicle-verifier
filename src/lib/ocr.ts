@@ -36,57 +36,89 @@ export async function extractPlate(imageBlob: Blob, apiKey: string): Promise<OCR
     });
     
     const result = await response.json();
+    console.log('Full OCR API response:', result);
     
     if (!response.ok) {
       const errorMessage = result.ErrorMessage || 'OCR API request failed';
+      console.error('OCR API error:', errorMessage);
       throw new Error(errorMessage);
     }
     
-    if (!result.ParsedResults || !result.ParsedResults[0] || !result.ParsedResults[0].ParsedText) {
+    if (!result.ParsedResults || !result.ParsedResults[0]) {
+      console.log('No ParsedResults in response');
       return {
         plate: null,
         confidence: 0
       };
     }
     
-    let text = result.ParsedResults[0].ParsedText.toUpperCase().replace(/[^A-Z0-9\s]/g, '').trim();
+    if (!result.ParsedResults[0].ParsedText) {
+      console.log('No ParsedText in first result');
+      return {
+        plate: null,
+        confidence: 0
+      };
+    }
+    
+    const rawText = result.ParsedResults[0].ParsedText;
+    console.log('Raw OCR text from API:', rawText);
+    
+    let text = rawText.toUpperCase().replace(/[^A-Z0-9\s]/g, '').trim();
+    console.log('After cleaning (remove non-alphanumeric):', text);
     
     // Remove GB prefix or suffix and extra whitespace
+    const beforeGBRemoval = text;
     text = text.replace(/^GB\s?|\s?GB$/g, '').trim();
+    if (text !== beforeGBRemoval) {
+      console.log('After removing GB prefix/suffix:', text);
+    }
     
-    console.log('OCR text:', text);
+    console.log('Final cleaned text for pattern matching:', text);
+    console.log('Text length:', text.length);
     
     // UK plate regex patterns
     const patterns = [
-      /[A-Z]{2}[0-9]{2}\s?[A-Z]{3}/g,  // Current format: AB12 CDE
-      /[A-Z][0-9]{1,3}\s?[A-Z]{3}/g,   // Prefix: A123 BCD  
-      /[A-Z]{3}\s?[0-9]{1,3}[A-Z]/g,   // Suffix: ABC 123D
-      /[A-Z]{1,2}\s?[0-9]{1,4}/g       // Dateless: AB 1234
+      { pattern: /[A-Z]{2}[0-9]{2}\s?[A-Z]{3}/g, name: 'Current format: AB12 CDE' },
+      { pattern: /[A-Z][0-9]{1,3}\s?[A-Z]{3}/g, name: 'Prefix: A123 BCD' },
+      { pattern: /[A-Z]{3}\s?[0-9]{1,3}[A-Z]/g, name: 'Suffix: ABC 123D' },
+      { pattern: /[A-Z]{1,2}\s?[0-9]{1,4}/g, name: 'Dateless: AB 1234' }
     ];
     
+    console.log('Trying', patterns.length, 'plate patterns...');
+    
     // Try each pattern
-    for (const pattern of patterns) {
+    for (let i = 0; i < patterns.length; i++) {
+      const { pattern, name } = patterns[i];
+      console.log(`Pattern ${i + 1} (${name}):`, pattern);
+      
       const matches = Array.from(text.matchAll(pattern));
+      console.log(`  Found ${matches.length} matches:`, matches.map(m => (m as RegExpMatchArray)[0]));
+      
       if (matches.length > 0) {
         // Return the longest match (most likely to be complete plate)
         let bestMatch = matches[0];
-        for (let i = 1; i < matches.length; i++) {
-          if ((matches[i] as RegExpMatchArray)[0].length > (bestMatch as RegExpMatchArray)[0].length) {
-            bestMatch = matches[i];
+        for (let j = 1; j < matches.length; j++) {
+          if ((matches[j] as RegExpMatchArray)[0].length > (bestMatch as RegExpMatchArray)[0].length) {
+            bestMatch = matches[j];
           }
         }
         let plate = (bestMatch as RegExpMatchArray)[0].replace(/\s/g, '');
+        console.log(`  Best match: "${plate}" (length: ${plate.length})`);
         
         // Basic validation - UK plates are typically 2-8 characters
         if (plate.length >= 2 && plate.length <= 8) {
+          console.log(`  ✅ Plate accepted: ${plate}`);
           return {
             plate,
             confidence: 1 // OCR.space doesn't provide confidence, so we use 1
           };
+        } else {
+          console.log(`  ❌ Plate rejected: length ${plate.length} not in range 2-8`);
         }
       }
     }
     
+    console.log('❌ No valid license plate found in text');
     return {
       plate: null,
       confidence: 0
