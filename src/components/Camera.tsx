@@ -13,114 +13,11 @@ const Camera: Component<CameraProps> = (props) => {
   const [stream, setStream] = createSignal<MediaStream | null>(null);
   const [isStreaming, setIsStreaming] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
-  const [hasCamera, setHasCamera] = createSignal(true);
+  const [_hasCamera, setHasCamera] = createSignal(true);
 
-  const startCamera = async () => {
-    try {
-      setError(null);
-      console.log('Requesting camera access...');
-      
-      // Wait for DOM elements to be available
-      await new Promise((resolve, reject) => {
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max
-        
-        const checkRefs = () => {
-          attempts++;
-          console.log(`Checking refs attempt ${attempts}, videoRef exists:`, !!videoRef);
-          
-          if (videoRef && videoRef instanceof HTMLVideoElement) {
-            console.log('Video element found and is HTMLVideoElement');
-            resolve(null);
-          } else if (attempts >= maxAttempts) {
-            reject(new Error('Video element not available after waiting'));
-          } else {
-            setTimeout(checkRefs, 100);
-          }
-        };
-        
-        checkRefs();
-      });
-      
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: { ideal: 'environment' }, // Prefer back camera
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      });
-      
-      console.log('Camera stream obtained:', mediaStream);
-      console.log('Video tracks:', mediaStream.getVideoTracks().length);
-      console.log('Video ref exists:', !!videoRef);
-      
-      if (!videoRef) {
-        throw new Error('Video element not available');
-      }
-      
-      setStream(mediaStream);
-      videoRef.srcObject = mediaStream;
-      
-      // Wait for video to be ready before setting streaming state
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Video loading timeout'));
-        }, 10000); // 10 second timeout
-        
-        const onLoadedMetadata = () => {
-          console.log('Video metadata loaded');
-          clearTimeout(timeout);
-          videoRef.removeEventListener('loadedmetadata', onLoadedMetadata);
-          videoRef.removeEventListener('error', onError);
-          resolve();
-        };
-        
-        const onError = (e: Event) => {
-          console.error('Video element error:', e);
-          clearTimeout(timeout);
-          videoRef.removeEventListener('loadedmetadata', onLoadedMetadata);
-          videoRef.removeEventListener('error', onError);
-          reject(new Error('Video element failed to load'));
-        };
-        
-        videoRef.addEventListener('loadedmetadata', onLoadedMetadata);
-        videoRef.addEventListener('error', onError);
-        
-        // If video is already ready
-        if (videoRef.readyState >= 1) {
-          onLoadedMetadata();
-        }
-      });
-      
-      console.log('Video ready, setting streaming to true');
-      setIsStreaming(true);
-    } catch (err) {
-      console.error('Camera access failed:', err);
-      console.error('Error details:', {
-        name: (err as any).name,
-        message: (err as any).message,
-        stack: (err as any).stack
-      });
-      
-      setHasCamera(false);
-      if (err instanceof DOMException) {
-        switch (err.name) {
-          case 'NotAllowedError':
-            setError('Camera access denied. Please allow camera permission and try again.');
-            break;
-          case 'NotFoundError':
-            setError('No camera found on this device.');
-            break;
-          case 'NotReadableError':
-            setError('Camera is already in use by another application.');
-            break;
-          default:
-            setError(`Camera error: ${err.message}. Please try using file upload instead.`);
-        }
-      } else {
-        setError(`Failed to access camera: ${(err as Error).message}. Please try using file upload instead.`);
-      }
-    }
+  const startCamera = () => {
+    console.log('Triggering native camera...');
+    triggerFileInput();
   };
 
   const stopCamera = () => {
@@ -230,14 +127,12 @@ const Camera: Component<CameraProps> = (props) => {
                 <div class="camera-icon">📷</div>
                 <h3>Take a photo of the license plate</h3>
                 <p>Position the license plate clearly in the frame for best results</p>
-                <Show when={hasCamera()}>
+                <div class="camera-buttons">
                   <button onClick={startCamera} class="button primary large">
-                    Start Camera
+                    📷 Take Photo
                   </button>
-                </Show>
-                <div class="camera-alternatives">
                   <button onClick={triggerFileInput} class="button secondary">
-                    📂 Upload Image
+                    📂 Choose from Photos
                   </button>
                 </div>
               </div>
