@@ -23,6 +23,11 @@ export async function extractPlate(imageBlob: Blob, apiKey: string): Promise<OCR
       throw new Error('OCR.space API key not configured. Please check settings.');
     }
 
+    console.log('📸 Image details:');
+    console.log('  Size:', Math.round(imageBlob.size / 1024) + 'KB');
+    console.log('  Type:', imageBlob.type);
+    console.log('  API Key length:', apiKey.length);
+    
     const formData = new FormData();
     formData.append('file', imageBlob);
     formData.append('apikey', apiKey);
@@ -30,13 +35,15 @@ export async function extractPlate(imageBlob: Blob, apiKey: string): Promise<OCR
     formData.append('scale', 'true');
     formData.append('isTable', 'true');
     
+    console.log('🌐 Sending to OCR.space API...');
+    
     const response = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
       body: formData
     });
     
     const result = await response.json();
-    console.log('Full OCR API response:', result);
+    console.log('Full OCR API response:', JSON.stringify(result, null, 2));
     
     if (!response.ok) {
       const errorMessage = result.ErrorMessage || 'OCR API request failed';
@@ -45,7 +52,19 @@ export async function extractPlate(imageBlob: Blob, apiKey: string): Promise<OCR
     }
     
     if (!result.ParsedResults || !result.ParsedResults[0]) {
-      console.log('No ParsedResults in response');
+      console.log('❌ No ParsedResults in response');
+      console.log('OCR Status:', result.OCRExitCode);
+      console.log('Is Error:', result.IsErroredOnProcessing);
+      console.log('Error Message:', result.ErrorMessage);
+      console.log('Processing Time:', result.ProcessingTimeInMilliseconds + 'ms');
+      
+      // Common reasons for no results
+      if (result.IsErroredOnProcessing) {
+        console.log('🔍 OCR processing failed - image might be unclear, too small, or API key issue');
+      } else {
+        console.log('🔍 OCR completed but found no text in image');
+      }
+      
       return {
         plate: null,
         confidence: 0
