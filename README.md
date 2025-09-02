@@ -2,6 +2,8 @@
 
 A privacy-focused Progressive Web App (PWA) for checking UK vehicle tax and MOT status using license plate recognition.
 
+Vibe coded by Claude.  All errors are his fault!
+
 ## 🌐 Try It Now
 
 **[Launch App →](https://electronstudio.github.io/vehicle-verifier/)**
