@@ -1,15 +1,63 @@
-import Tesseract from 'tesseract.js';
+import Tesseract, { PSM }  from 'tesseract.js';
 import type { OCRResult } from './types';
 
 export async function extractPlate(imageBlob: Blob): Promise<OCRResult> {
   try {
-    const { data: { text, confidence } } = await Tesseract.recognize(
-      imageBlob,
-      'eng',
-      {
-        logger: (m) => console.log(m)
+
+    // Create image element
+    const img = new Image();
+    const url = URL.createObjectURL(imageBlob);
+    img.src = url;
+    await new Promise(resolve => img.onload = resolve);
+
+    // Create canvas and preprocess
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+
+    // Draw and preprocess
+    ctx!.drawImage(img, 0, 0);
+    ctx!.filter = 'contrast(200%) brightness(150%) grayscale(100%)';
+    ctx!.drawImage(canvas, 0, 0);
+
+    // Convert to blob
+    const processedBlob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(blob => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error('Failed to convert canvas to blob'));
       }
+    }, 'image/png')
     );
+
+
+    // Create and configure worker properly
+    const worker = await Tesseract.createWorker('eng', 1, {
+      logger: m => console.log(m),
+    });
+
+    // Set parameters on the worker
+    await worker.setParameters({
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ',
+      tessedit_pageseg_mode: PSM.SINGLE_WORD,
+      preserve_interword_spaces: '0',
+    });
+
+    // Now recognize
+    const { data: { text, confidence } } = await worker.recognize(processedBlob);
+
+    // Terminate worker to free memory
+    await worker.terminate();
+
+    // const { data: { text, confidence } } = await Tesseract.recognize(
+    //   processedBlob,
+    //   'eng',
+    //   {
+    //     logger: (m) => console.log(m)
+    //   }
+    // );
     
     // UK plate regex patterns
     const patterns = [
