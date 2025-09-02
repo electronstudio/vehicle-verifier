@@ -255,7 +255,7 @@ const Settings: Component = () => {
         <h3>ℹ️ About</h3>
         <div class="about-info">
           <p><strong>UK Vehicle Checker</strong></p>
-          <p>Version: 1.1.0</p>
+          <p>Version: 1.1.1</p>
           <p>A privacy-focused PWA for checking UK vehicle tax and MOT status.</p>
           
           <div class="privacy-highlights">

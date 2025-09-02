@@ -20,8 +20,27 @@ const Camera: Component<CameraProps> = (props) => {
       setError(null);
       console.log('Requesting camera access...');
       
-      // Small delay to ensure DOM is ready
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for DOM elements to be available
+      await new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max
+        
+        const checkRefs = () => {
+          attempts++;
+          console.log(`Checking refs attempt ${attempts}, videoRef exists:`, !!videoRef);
+          
+          if (videoRef && videoRef instanceof HTMLVideoElement) {
+            console.log('Video element found and is HTMLVideoElement');
+            resolve(null);
+          } else if (attempts >= maxAttempts) {
+            reject(new Error('Video element not available after waiting'));
+          } else {
+            setTimeout(checkRefs, 100);
+          }
+        };
+        
+        checkRefs();
+      });
       
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
