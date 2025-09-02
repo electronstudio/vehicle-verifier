@@ -8,7 +8,8 @@ interface CameraProps {
 const Camera: Component<CameraProps> = (props) => {
   let videoRef!: HTMLVideoElement;
   let canvasRef!: HTMLCanvasElement;
-  let fileInputRef!: HTMLInputElement;
+  let cameraInputRef!: HTMLInputElement;
+  let photoInputRef!: HTMLInputElement;
   
   const [stream, setStream] = createSignal<MediaStream | null>(null);
   const [isStreaming, setIsStreaming] = createSignal(false);
@@ -17,7 +18,7 @@ const Camera: Component<CameraProps> = (props) => {
 
   const startCamera = () => {
     console.log('Triggering native camera...');
-    triggerFileInput();
+    cameraInputRef.click();
   };
 
   const stopCamera = () => {
@@ -71,8 +72,9 @@ const Camera: Component<CameraProps> = (props) => {
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.click();
+  const triggerPhotoLibrary = () => {
+    console.log('Opening photo library...');
+    photoInputRef.click();
   };
 
   onMount(() => {
@@ -112,7 +114,7 @@ const Camera: Component<CameraProps> = (props) => {
             <div class="error-icon">📷</div>
             <p>{error()}</p>
             <div class="camera-fallback">
-              <button onClick={triggerFileInput} class="button primary">
+              <button onClick={triggerPhotoLibrary} class="button primary">
                 📂 Upload Image Instead
               </button>
             </div>
@@ -131,7 +133,7 @@ const Camera: Component<CameraProps> = (props) => {
                   <button onClick={startCamera} class="button primary large">
                     📷 Take Photo
                   </button>
-                  <button onClick={triggerFileInput} class="button secondary">
+                  <button onClick={triggerPhotoLibrary} class="button secondary">
                     📂 Choose from Photos
                   </button>
                 </div>
@@ -155,7 +157,7 @@ const Camera: Component<CameraProps> = (props) => {
               <button onClick={captureImage} class="button capture-btn" title="Capture">
                 <div class="capture-inner"></div>
               </button>
-              <button onClick={triggerFileInput} class="button secondary">
+              <button onClick={triggerPhotoLibrary} class="button secondary">
                 📂 Upload
               </button>
             </div>
@@ -163,12 +165,21 @@ const Camera: Component<CameraProps> = (props) => {
         </Show>
       </Show>
 
-      {/* Hidden file input */}
+      {/* Hidden camera input - launches camera */}
       <input
-        ref={fileInputRef!}
+        ref={cameraInputRef!}
         type="file"
         accept="image/*"
         capture="environment"
+        style={{ display: 'none' }}
+        onChange={handleFileUpload}
+      />
+
+      {/* Hidden photo library input - opens photo library */}
+      <input
+        ref={photoInputRef!}
+        type="file"
+        accept="image/*"
         style={{ display: 'none' }}
         onChange={handleFileUpload}
       />
