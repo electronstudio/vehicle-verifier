@@ -43,10 +43,12 @@ async function resizeImage(imageBlob: Blob, maxSizeKB: number = 800): Promise<Bl
       const tryQuality = (quality: number) => {
         canvas.toBlob((blob) => {
           if (blob && (blob.size <= maxSizeKB * 1024 || quality <= 0.1)) {
-            console.log(`✅ Resized image: ${width}x${height}, ${Math.round(blob.size / 1024)}KB at ${quality * 100}% quality`);
-            resolve(blob);
+            console.log(`✅ Resized image: ${width}x${height}, ${Math.round(blob.size / 1024)}KB at ${Math.round(quality * 100)}% quality`);
+            // Ensure the blob has the correct MIME type
+            const jpegBlob = new Blob([blob], { type: 'image/jpeg' });
+            resolve(jpegBlob);
           } else {
-            tryQuality(quality - 0.1);
+            tryQuality(Math.max(0.1, quality - 0.1));
           }
         }, 'image/jpeg', quality);
       };
@@ -76,8 +78,14 @@ export async function extractPlate(imageBlob: Blob, apiKey: string): Promise<OCR
       processedImage = await resizeImage(imageBlob);
     }
     
+    console.log('📤 Final image for OCR:');
+    console.log('  Size:', Math.round(processedImage.size / 1024) + 'KB');
+    console.log('  Type:', processedImage.type);
+    
     const formData = new FormData();
-    formData.append('file', processedImage);
+    // Ensure the file has the correct filename and extension
+    const fileName = `image_${Date.now()}.jpg`;
+    formData.append('file', processedImage, fileName);
     formData.append('apikey', apiKey);
     formData.append('OCREngine', '2'); // Engine 2 is better for plates
     formData.append('scale', 'true');
