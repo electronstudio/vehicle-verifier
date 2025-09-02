@@ -49,7 +49,11 @@ export async function extractPlate(imageBlob: Blob, apiKey: string): Promise<OCR
       };
     }
     
-    const text = result.ParsedResults[0].ParsedText.toUpperCase().replace(/[^A-Z0-9\s]/g, '');
+    let text = result.ParsedResults[0].ParsedText.toUpperCase().replace(/[^A-Z0-9\s]/g, '').trim();
+    
+    // Remove GB prefix or suffix and extra whitespace
+    text = text.replace(/^GB\s?|\s?GB$/g, '').trim();
+    
     console.log('OCR text:', text);
     
     // UK plate regex patterns
@@ -71,7 +75,7 @@ export async function extractPlate(imageBlob: Blob, apiKey: string): Promise<OCR
             bestMatch = matches[i];
           }
         }
-        const plate = (bestMatch as RegExpMatchArray)[0].replace(/\s/g, '');
+        let plate = (bestMatch as RegExpMatchArray)[0].replace(/\s/g, '');
         
         // Basic validation - UK plates are typically 2-8 characters
         if (plate.length >= 2 && plate.length <= 8) {
