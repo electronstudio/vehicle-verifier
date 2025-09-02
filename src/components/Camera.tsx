@@ -20,6 +20,9 @@ const Camera: Component<CameraProps> = (props) => {
       setError(null);
       console.log('Requesting camera access...');
       
+      // Small delay to ensure DOM is ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: { ideal: 'environment' }, // Prefer back camera
@@ -30,6 +33,11 @@ const Camera: Component<CameraProps> = (props) => {
       
       console.log('Camera stream obtained:', mediaStream);
       console.log('Video tracks:', mediaStream.getVideoTracks().length);
+      console.log('Video ref exists:', !!videoRef);
+      
+      if (!videoRef) {
+        throw new Error('Video element not available');
+      }
       
       setStream(mediaStream);
       videoRef.srcObject = mediaStream;
@@ -106,7 +114,15 @@ const Camera: Component<CameraProps> = (props) => {
   };
 
   const captureImage = () => {
-    if (!videoRef || !canvasRef || !isStreaming()) return;
+    console.log('Capturing image...');
+    console.log('Video ref exists:', !!videoRef);
+    console.log('Canvas ref exists:', !!canvasRef);
+    console.log('Is streaming:', isStreaming());
+    
+    if (!videoRef || !canvasRef || !isStreaming()) {
+      console.error('Cannot capture: missing refs or not streaming');
+      return;
+    }
 
     const canvas = canvasRef;
     const video = videoRef;
