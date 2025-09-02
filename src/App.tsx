@@ -11,6 +11,7 @@ import Results from './components/Results';
 import Settings from './components/Settings';
 import History from './components/History';
 import DebugConsole from './components/DebugConsole';
+import IOSInstallPrompt from './components/IOSInstallPrompt';
 import './style.css';
 
 // Initialize state from localStorage
@@ -234,6 +235,7 @@ const App: Component = () => {
         <MainApp />
       </Show>
       <DebugConsole />
+      <IOSInstallPrompt />
     </>
   );
 };
