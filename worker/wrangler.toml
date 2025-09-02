@@ -1,0 +1,15 @@
+name = "vehicle-checker"
+main = "worker.ts"
+compatibility_date = "2024-01-01"
+
+[env.production]
+# Environment variables to be set in Cloudflare dashboard:
+# DVLA_API_KEY = "your-dvla-api-key-here"
+
+# Optional: Configure custom domain
+# route = "api.your-domain.com/*"
+
+# Worker limits (free tier)
+# 100,000 requests per day
+# 10ms CPU time per request
+# 128MB memory
