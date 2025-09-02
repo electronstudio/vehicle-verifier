@@ -18,6 +18,8 @@ const Camera: Component<CameraProps> = (props) => {
   const startCamera = async () => {
     try {
       setError(null);
+      console.log('Requesting camera access...');
+      
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: { ideal: 'environment' }, // Prefer back camera
@@ -26,11 +28,53 @@ const Camera: Component<CameraProps> = (props) => {
         }
       });
       
+      console.log('Camera stream obtained:', mediaStream);
+      console.log('Video tracks:', mediaStream.getVideoTracks().length);
+      
       setStream(mediaStream);
       videoRef.srcObject = mediaStream;
+      
+      // Wait for video to be ready before setting streaming state
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Video loading timeout'));
+        }, 10000); // 10 second timeout
+        
+        const onLoadedMetadata = () => {
+          console.log('Video metadata loaded');
+          clearTimeout(timeout);
+          videoRef.removeEventListener('loadedmetadata', onLoadedMetadata);
+          videoRef.removeEventListener('error', onError);
+          resolve();
+        };
+        
+        const onError = (e: Event) => {
+          console.error('Video element error:', e);
+          clearTimeout(timeout);
+          videoRef.removeEventListener('loadedmetadata', onLoadedMetadata);
+          videoRef.removeEventListener('error', onError);
+          reject(new Error('Video element failed to load'));
+        };
+        
+        videoRef.addEventListener('loadedmetadata', onLoadedMetadata);
+        videoRef.addEventListener('error', onError);
+        
+        // If video is already ready
+        if (videoRef.readyState >= 1) {
+          onLoadedMetadata();
+        }
+      });
+      
+      console.log('Video ready, setting streaming to true');
       setIsStreaming(true);
     } catch (err) {
       console.error('Camera access failed:', err);
+      console.error('Error details:', {
+        name: (err as any).name,
+        message: (err as any).message,
+        stack: (err as any).stack
+      });
+      
       setHasCamera(false);
       if (err instanceof DOMException) {
         switch (err.name) {
@@ -44,10 +88,10 @@ const Camera: Component<CameraProps> = (props) => {
             setError('Camera is already in use by another application.');
             break;
           default:
-            setError('Failed to access camera. Please try using file upload instead.');
+            setError(`Camera error: ${err.message}. Please try using file upload instead.`);
         }
       } else {
-        setError('Failed to access camera. Please try using file upload instead.');
+        setError(`Failed to access camera: ${(err as Error).message}. Please try using file upload instead.`);
       }
     }
   };
@@ -157,6 +201,8 @@ const Camera: Component<CameraProps> = (props) => {
               autoplay 
               playsinline 
               muted
+              webkit-playsinline
+              controls={false}
               class="camera-video"
             />
             <div class="camera-overlay">
