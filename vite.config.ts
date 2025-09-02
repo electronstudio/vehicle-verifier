@@ -3,7 +3,7 @@ import solid from 'vite-plugin-solid'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/vehicle-checker/' : '/',
+  base: process.env.NODE_ENV === 'production' ? '/vehicle-verifier/' : '/',
   plugins: [
     solid(),
     VitePWA({
@@ -16,7 +16,7 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: process.env.NODE_ENV === 'production' ? '/vehicle-checker/' : '/',
+        start_url: process.env.NODE_ENV === 'production' ? '/vehicle-verifier/' : '/',
         categories: ['utilities', 'productivity'],
         icons: [
           { 
