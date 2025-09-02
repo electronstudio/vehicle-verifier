@@ -10,6 +10,7 @@ import Camera from './components/Camera';
 import Results from './components/Results';
 import Settings from './components/Settings';
 import History from './components/History';
+import DebugConsole from './components/DebugConsole';
 import './style.css';
 
 // Initialize state from localStorage
@@ -225,12 +226,15 @@ const MainApp: Component = () => {
 
 const App: Component = () => {
   return (
-    <Show
-      when={state.setupComplete}
-      fallback={<SetupGuideComponent />}
-    >
-      <MainApp />
-    </Show>
+    <>
+      <Show
+        when={state.setupComplete}
+        fallback={<SetupGuideComponent />}
+      >
+        <MainApp />
+      </Show>
+      <DebugConsole />
+    </>
   );
 };
 
