@@ -194,6 +194,20 @@ const Camera: Component<CameraProps> = (props) => {
 
   return (
     <div class="camera-container">
+      {/* Always render video element but hide when not streaming */}
+      <video 
+        ref={videoRef!}
+        autoplay 
+        playsinline 
+        muted
+        webkit-playsinline
+        controls={false}
+        class="camera-video"
+        style={{
+          display: isStreaming() ? 'block' : 'none'
+        }}
+      />
+
       <Show 
         when={!error()}
         fallback={
@@ -231,15 +245,6 @@ const Camera: Component<CameraProps> = (props) => {
           }
         >
           <div class="video-container">
-            <video 
-              ref={videoRef!}
-              autoplay 
-              playsinline 
-              muted
-              webkit-playsinline
-              controls={false}
-              class="camera-video"
-            />
             <div class="camera-overlay">
               <div class="viewfinder">
                 <div class="viewfinder-corner top-left"></div>
