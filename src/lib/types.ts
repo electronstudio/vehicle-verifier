@@ -15,6 +15,7 @@ export interface VehicleResponse {
 export interface Settings {
   workerUrl: string;
   cacheExpiry: number;
+  ocrApiKey: string;
 }
 
 export interface CachedData<T> {

@@ -2,19 +2,22 @@ import type { Component } from 'solid-js';
 import { createSignal } from 'solid-js';
 
 interface SetupGuideProps {
-  onComplete: (url: string) => void;
+  onComplete: (workerUrl: string, ocrApiKey: string) => void;
 }
 
 const SetupGuide: Component<SetupGuideProps> = (props) => {
   const [workerUrl, setWorkerUrl] = createSignal('');
+  const [ocrApiKey, setOcrApiKey] = createSignal('');
   const [step, setStep] = createSignal(1);
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
     const url = workerUrl().trim();
-    if (url) {
+    const key = ocrApiKey().trim();
+    if (url && key) {
       localStorage.setItem('worker_url', url);
-      props.onComplete(url);
+      localStorage.setItem('ocr_api_key', key);
+      props.onComplete(url, key);
     }
   };
 
@@ -71,6 +74,39 @@ const SetupGuide: Component<SetupGuideProps> = (props) => {
 
         <div class={`step ${step() >= 2 ? 'active' : ''}`}>
           <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Get your OCR.space API key</h3>
+            <p>Sign up for free OCR API to read license plates from photos</p>
+            <a 
+              href="https://ocr.space/ocrapi/freekey" 
+              target="_blank" 
+              class="button primary"
+              rel="noopener noreferrer"
+            >
+              Get OCR API Key →
+            </a>
+            <div class="step-details">
+              <details>
+                <summary>Instructions</summary>
+                <ol>
+                  <li>Go to the OCR.space API page</li>
+                  <li>Enter your email address</li>
+                  <li>Check your email for the API key</li>
+                  <li>Copy the key for the next step</li>
+                </ol>
+              </details>
+            </div>
+            <button 
+              class="button secondary" 
+              onClick={() => setStep(3)}
+            >
+              I have my OCR key →
+            </button>
+          </div>
+        </div>
+
+        <div class={`step ${step() >= 3 ? 'active' : ''}`}>
+          <div class="step-number">3</div>
           <div class="step-content">
             <h3>Deploy your proxy (free)</h3>
             <p>Deploy a Cloudflare Worker to securely proxy API requests</p>
@@ -179,36 +215,53 @@ const SetupGuide: Component<SetupGuideProps> = (props) => {
             </div>
             <button 
               class="button secondary" 
-              onClick={() => setStep(3)}
+              onClick={() => setStep(4)}
             >
               I deployed the worker →
             </button>
           </div>
         </div>
 
-        <div class={`step ${step() >= 3 ? 'active' : ''}`}>
-          <div class="step-number">3</div>
+        <div class={`step ${step() >= 4 ? 'active' : ''}`}>
+          <div class="step-number">4</div>
           <div class="step-content">
-            <h3>Enter your Worker URL</h3>
-            <p>Paste the URL from your deployed Cloudflare Worker</p>
-            <form onSubmit={handleSubmit} class="worker-url-form">
-              <input 
-                type="url" 
-                placeholder="https://your-worker-name.your-subdomain.workers.dev"
-                value={workerUrl()}
-                onInput={(e) => setWorkerUrl(e.target.value)}
-                required
-                class={validateUrl(workerUrl()) || !workerUrl() ? '' : 'error'}
-              />
-              {workerUrl() && !validateUrl(workerUrl()) && (
-                <div class="validation-error">
-                  Please enter a valid Cloudflare Worker URL (https://*.workers.dev)
-                </div>
-              )}
+            <h3>Complete Setup</h3>
+            <p>Enter your configuration details below</p>
+            <form onSubmit={handleSubmit} class="setup-form">
+              <div class="form-group">
+                <label for="worker-url">Worker URL</label>
+                <input 
+                  id="worker-url"
+                  type="url" 
+                  placeholder="https://your-worker-name.your-subdomain.workers.dev"
+                  value={workerUrl()}
+                  onInput={(e) => setWorkerUrl(e.target.value)}
+                  required
+                  class={validateUrl(workerUrl()) || !workerUrl() ? '' : 'error'}
+                />
+                {workerUrl() && !validateUrl(workerUrl()) && (
+                  <div class="validation-error">
+                    Please enter a valid Cloudflare Worker URL (https://*.workers.dev)
+                  </div>
+                )}
+              </div>
+              
+              <div class="form-group">
+                <label for="ocr-key">OCR.space API Key</label>
+                <input 
+                  id="ocr-key"
+                  type="text" 
+                  placeholder="K8xxxxxxxxxxxxxxxx"
+                  value={ocrApiKey()}
+                  onInput={(e) => setOcrApiKey(e.target.value)}
+                  required
+                />
+              </div>
+              
               <button 
                 type="submit" 
                 class="button primary"
-                disabled={!validateUrl(workerUrl())}
+                disabled={!validateUrl(workerUrl()) || !ocrApiKey().trim()}
               >
                 Complete Setup 🚀
               </button>

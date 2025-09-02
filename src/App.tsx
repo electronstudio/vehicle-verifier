@@ -20,7 +20,7 @@ const initialState: AppState = {
   loading: false,
   error: null,
   history: JSON.parse(localStorage.getItem('history') || '[]'),
-  setupComplete: !!localStorage.getItem('worker_url'),
+  setupComplete: !!localStorage.getItem('worker_url') && !!localStorage.getItem('ocr_api_key'),
   currentView: 'camera'
 };
 
@@ -49,7 +49,12 @@ const handleImageCapture = async (blob: Blob) => {
   
   try {
     // Extract plate from image
-    const ocrResult = await extractPlate(blob);
+    const ocrApiKey = localStorage.getItem('ocr_api_key');
+    if (!ocrApiKey) {
+      throw new Error('OCR API key not configured. Please check settings.');
+    }
+    
+    const ocrResult = await extractPlate(blob, ocrApiKey);
     if (!ocrResult.plate) {
       throw new Error('Could not read license plate. Please try again or enter manually.');
     }
@@ -117,8 +122,8 @@ const handleHistorySelect = (entry: HistoryEntry) => {
 
 const SetupGuideComponent: Component = () => (
   <SetupGuide 
-    onComplete={(url: string) => {
-      setState('workerUrl', url);
+    onComplete={(workerUrl: string, _ocrApiKey: string) => {
+      setState('workerUrl', workerUrl);
       setState('setupComplete', true);
     }} 
   />

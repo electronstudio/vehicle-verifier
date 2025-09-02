@@ -1,63 +1,56 @@
-import Tesseract, { PSM }  from 'tesseract.js';
 import type { OCRResult } from './types';
 
-export async function extractPlate(imageBlob: Blob): Promise<OCRResult> {
+export async function ocrSpaceRecognize(imageBlob: Blob, apiKey: string): Promise<string | null> {
+  const formData = new FormData();
+  formData.append('file', imageBlob);
+  formData.append('apikey', apiKey);
+  formData.append('OCREngine', '2'); // Engine 2 is better for plates
+  formData.append('scale', 'true');
+  formData.append('isTable', 'true');
+  
+  const response = await fetch('https://api.ocr.space/parse/image', {
+    method: 'POST',
+    body: formData
+  });
+  
+  const result = await response.json();
+  return result.ParsedResults?.[0]?.ParsedText || null;
+}
+
+export async function extractPlate(imageBlob: Blob, apiKey: string): Promise<OCRResult> {
   try {
+    if (!apiKey) {
+      throw new Error('OCR.space API key not configured. Please check settings.');
+    }
 
-    // Create image element
-    const img = new Image();
-    const url = URL.createObjectURL(imageBlob);
-    img.src = url;
-    await new Promise(resolve => img.onload = resolve);
-
-    // Create canvas and preprocess
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext('2d');
-
-    // Draw and preprocess
-    ctx!.drawImage(img, 0, 0);
-    ctx!.filter = 'contrast(200%) brightness(150%) grayscale(100%)';
-    ctx!.drawImage(canvas, 0, 0);
-
-    // Convert to blob
-    const processedBlob = await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob(blob => {
-      if (blob) {
-        resolve(blob);
-      } else {
-        reject(new Error('Failed to convert canvas to blob'));
-      }
-    }, 'image/png')
-    );
-
-
-    // Create and configure worker properly
-    const worker = await Tesseract.createWorker('eng', 1, {
-      logger: m => console.log(m),
+    const formData = new FormData();
+    formData.append('file', imageBlob);
+    formData.append('apikey', apiKey);
+    formData.append('OCREngine', '2'); // Engine 2 is better for plates
+    formData.append('scale', 'true');
+    formData.append('isTable', 'true');
+    
+    const response = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      body: formData
     });
-
-    // Set parameters on the worker
-    await worker.setParameters({
-      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ',
-      tessedit_pageseg_mode: PSM.SINGLE_WORD,
-      preserve_interword_spaces: '0',
-    });
-
-    // Now recognize
-    const { data: { text, confidence } } = await worker.recognize(processedBlob);
-
-    // Terminate worker to free memory
-    await worker.terminate();
-
-    // const { data: { text, confidence } } = await Tesseract.recognize(
-    //   processedBlob,
-    //   'eng',
-    //   {
-    //     logger: (m) => console.log(m)
-    //   }
-    // );
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      const errorMessage = result.ErrorMessage || 'OCR API request failed';
+      throw new Error(errorMessage);
+    }
+    
+    if (!result.ParsedResults || !result.ParsedResults[0] || !result.ParsedResults[0].ParsedText) {
+      return {
+        plate: null,
+        confidence: 0
+      };
+    }
+    
+    const text = result.ParsedResults[0].ParsedText.toUpperCase().replace(/[^A-Z0-9\s]/g, '');
+    console.log('OCR text:', text);
     
     // UK plate regex patterns
     const patterns = [
@@ -67,24 +60,24 @@ export async function extractPlate(imageBlob: Blob): Promise<OCRResult> {
       /[A-Z]{1,2}\s?[0-9]{1,4}/g       // Dateless: AB 1234
     ];
     
-    const cleanText = text.toUpperCase().replace(/[^A-Z0-9\s]/g, '');
-    console.log('OCR text:', cleanText);
-    
     // Try each pattern
     for (const pattern of patterns) {
-      const matches = Array.from(cleanText.matchAll(pattern));
+      const matches = Array.from(text.matchAll(pattern));
       if (matches.length > 0) {
         // Return the longest match (most likely to be complete plate)
-        const bestMatch = matches.reduce((a, b) => 
-          a[0].length > b[0].length ? a : b
-        );
-        const plate = bestMatch[0].replace(/\s/g, '');
+        let bestMatch = matches[0];
+        for (let i = 1; i < matches.length; i++) {
+          if ((matches[i] as RegExpMatchArray)[0].length > (bestMatch as RegExpMatchArray)[0].length) {
+            bestMatch = matches[i];
+          }
+        }
+        const plate = (bestMatch as RegExpMatchArray)[0].replace(/\s/g, '');
         
         // Basic validation - UK plates are typically 2-8 characters
         if (plate.length >= 2 && plate.length <= 8) {
           return {
             plate,
-            confidence: confidence / 100
+            confidence: 1 // OCR.space doesn't provide confidence, so we use 1
           };
         }
       }
@@ -92,7 +85,7 @@ export async function extractPlate(imageBlob: Blob): Promise<OCRResult> {
     
     return {
       plate: null,
-      confidence: confidence / 100
+      confidence: 0
     };
   } catch (error) {
     console.error('OCR failed:', error);

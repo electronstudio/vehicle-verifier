@@ -4,12 +4,14 @@ import { cache } from '../lib/cache';
 
 const Settings: Component = () => {
   const [workerUrl, setWorkerUrl] = createSignal('');
+  const [ocrApiKey, setOcrApiKey] = createSignal('');
   const [cacheExpiry, setCacheExpiry] = createSignal(7);
   const [showSuccess, setShowSuccess] = createSignal(false);
   const [cacheStats, setCacheStats] = createSignal({ count: 0, size: 0 });
 
   const loadSettings = () => {
     setWorkerUrl(localStorage.getItem('worker_url') || '');
+    setOcrApiKey(localStorage.getItem('ocr_api_key') || '');
     setCacheExpiry(parseInt(localStorage.getItem('cache_expiry') || '7'));
     updateCacheStats();
   };
@@ -32,6 +34,12 @@ const Settings: Component = () => {
   const saveWorkerUrl = () => {
     const url = workerUrl().trim();
     localStorage.setItem('worker_url', url);
+    showSuccessMessage();
+  };
+
+  const saveOcrApiKey = () => {
+    const key = ocrApiKey().trim();
+    localStorage.setItem('ocr_api_key', key);
     showSuccessMessage();
   };
 
@@ -58,8 +66,10 @@ const Settings: Component = () => {
       cache.clear();
       localStorage.removeItem('history');
       localStorage.removeItem('worker_url');
+      localStorage.removeItem('ocr_api_key');
       localStorage.removeItem('cache_expiry');
       setWorkerUrl('');
+      setOcrApiKey('');
       setCacheExpiry(7);
       updateCacheStats();
       showSuccessMessage();
@@ -138,6 +148,36 @@ const Settings: Component = () => {
                 <li>Create a new Worker with our provided code</li>
                 <li>Add your DVLA API key as an environment variable</li>
                 <li>Copy the Worker URL here</li>
+              </ol>
+            </details>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <label for="ocr-key">OCR.space API Key:</label>
+          <div class="url-input-group">
+            <input 
+              id="ocr-key"
+              type="text" 
+              value={ocrApiKey()}
+              onInput={(e) => setOcrApiKey(e.target.value)}
+              placeholder="K8xxxxxxxxxxxxxxxx"
+            />
+            <button 
+              onClick={saveOcrApiKey}
+              disabled={!ocrApiKey().trim()}
+              class="button secondary"
+            >
+              Save
+            </button>
+          </div>
+          <div class="setting-help">
+            <details>
+              <summary>Need an OCR API key?</summary>
+              <ol>
+                <li>Go to <a href="https://ocr.space/ocrapi/freekey" target="_blank">OCR.space</a></li>
+                <li>Enter your email to get a free API key</li>
+                <li>Check your email and copy the key here</li>
               </ol>
             </details>
           </div>
