@@ -20,13 +20,13 @@ export default defineConfig({
         categories: ['utilities', 'productivity'],
         icons: [
           { 
-            src: '/icon-192.png', 
+            src: process.env.NODE_ENV === 'production' ? '/vehicle-verifier/icon-192.png' : '/icon-192.png', 
             sizes: '192x192', 
             type: 'image/png',
             purpose: 'any maskable'
           },
           { 
-            src: '/icon-512.png', 
+            src: process.env.NODE_ENV === 'production' ? '/vehicle-verifier/icon-512.png' : '/icon-512.png', 
             sizes: '512x512', 
             type: 'image/png' 
           }
