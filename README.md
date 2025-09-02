@@ -1,28 +1,127 @@
-## Usage
+# 🚗 UK Vehicle Checker
+
+A privacy-focused Progressive Web App (PWA) for checking UK vehicle tax and MOT status using license plate recognition.
+
+## 🌐 Try It Now
+
+**[Launch App →](https://electronstudio.github.io/vehicle-verifier/)**
+
+The app runs entirely in your browser - no app store download required!
+
+## ✨ Features
+
+- **📷 Camera OCR** - Take photos of license plates for automatic recognition
+- **📂 Photo Library** - Upload existing photos from your device
+- **✋ Manual Entry** - Type license plates manually
+- **🔍 Real-time Lookup** - Check current tax and MOT status via DVLA API
+- **💾 Local Caching** - Store results locally for faster access
+- **📜 Search History** - View previously checked vehicles
+- **🔒 Privacy First** - All data stays on your device
+- **📱 PWA Ready** - Install as an app on your phone
+- **🌐 Offline Support** - Works without internet for cached results
+
+## 🚀 Quick Start
+
+1. **Visit**: [https://electronstudio.github.io/vehicle-verifier/](https://electronstudio.github.io/vehicle-verifier/)
+2. **Setup**: Follow the one-time setup wizard (takes ~5 minutes)
+   - Get free DVLA API key
+   - Get free OCR.space API key
+   - Deploy Cloudflare Worker (free)
+3. **Use**: Take photos of license plates or enter manually
+
+## 🔧 Setup Requirements
+
+The app requires two free API keys:
+
+### DVLA API Key
+- Register at [DVLA Developer Portal](https://developer-portal.driver-vehicle-licensing.api.gov.uk)
+- Subscribe to "Vehicle Enquiry Service (VES)"
+- Free tier available
+
+### OCR.space API Key
+- Get free key at [OCR.space](https://ocr.space/ocrapi/freekey)
+- 25 requests/day on free tier
+
+### Cloudflare Worker
+- Deploy the provided worker code (free tier: 100k requests/day)
+- Securely proxies API requests
+
+## 🔒 Privacy & Security
+
+- **Local Storage**: All data stored on your device only
+- **No Tracking**: No analytics or data collection
+- **Secure Proxy**: Your API keys stay in your own worker
+- **Open Source**: Fully transparent code
+- **HTTPS Only**: Secure connections throughout
+
+## 📱 Mobile Usage
+
+Perfect for mobile devices:
+- Native camera integration
+- Touch-friendly interface
+- Works offline with cached data
+- Install as PWA for app-like experience
+
+---
+
+## 🛠️ Developer Information
+
+This is a SolidJS PWA built with Vite and TypeScript.
+
+### Local Development
 
 ```bash
-$ npm install # or pnpm install or yarn install
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-### Learn more on the [Solid Website](https://solidjs.com) and come chat with us on our [Discord](https://discord.com/invite/solidjs)
+### Tech Stack
 
-## Available Scripts
+- **Frontend**: SolidJS + TypeScript
+- **Build**: Vite + PWA plugin
+- **OCR**: OCR.space API
+- **Vehicle Data**: DVLA Vehicle Enquiry Service
+- **Proxy**: Cloudflare Workers
+- **Hosting**: GitHub Pages
 
-In the project directory, you can run:
+### Project Structure
 
-### `npm run dev`
+```
+src/
+├── components/     # UI components
+├── lib/           # Core functionality (OCR, API, cache)
+├── style.css      # Global styles
+└── App.tsx        # Main application
 
-Runs the app in the development mode.<br>
-Open [http://localhost:5173](http://localhost:5173) to view it in the browser.
+worker/
+└── worker.ts      # Cloudflare Worker code
 
-### `npm run build`
+public/
+├── icon-*.png     # PWA icons
+└── manifest.json  # PWA manifest
+```
 
-Builds the app for production to the `dist` folder.<br>
-It correctly bundles Solid in production mode and optimizes the build for the best performance.
+### API Integration
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+The app uses a Cloudflare Worker to proxy DVLA API requests, avoiding CORS issues and keeping API keys secure.
 
-## Deployment
+### Contributing
 
-Learn more about deploying your application with the [documentations](https://vite.dev/guide/static-deploy.html)
+1. Fork the repository
+2. Create feature branch
+3. Make changes
+4. Test thoroughly
+5. Submit pull request
+
+### License
+
+This project is open source - see LICENSE file for details.
