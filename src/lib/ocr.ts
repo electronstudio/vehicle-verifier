@@ -17,19 +17,67 @@ export async function ocrSpaceRecognize(imageBlob: Blob, apiKey: string): Promis
   return result.ParsedResults?.[0]?.ParsedText || null;
 }
 
+async function resizeImage(imageBlob: Blob, maxSizeKB: number = 800): Promise<Blob> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    
+    img.onload = () => {
+      // Calculate new dimensions (max 1920px width for better OCR)
+      let { width, height } = img;
+      const maxWidth = 1920;
+      
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Try different quality levels until under size limit
+      const tryQuality = (quality: number) => {
+        canvas.toBlob((blob) => {
+          if (blob && (blob.size <= maxSizeKB * 1024 || quality <= 0.1)) {
+            console.log(`✅ Resized image: ${width}x${height}, ${Math.round(blob.size / 1024)}KB at ${quality * 100}% quality`);
+            resolve(blob);
+          } else {
+            tryQuality(quality - 0.1);
+          }
+        }, 'image/jpeg', quality);
+      };
+      
+      tryQuality(0.8); // Start with 80% quality
+    };
+    
+    img.src = URL.createObjectURL(imageBlob);
+  });
+}
+
 export async function extractPlate(imageBlob: Blob, apiKey: string): Promise<OCRResult> {
   try {
     if (!apiKey) {
       throw new Error('OCR.space API key not configured. Please check settings.');
     }
 
-    console.log('📸 Image details:');
+    console.log('📸 Original image details:');
     console.log('  Size:', Math.round(imageBlob.size / 1024) + 'KB');
     console.log('  Type:', imageBlob.type);
     console.log('  API Key length:', apiKey.length);
     
+    // Resize image if too large
+    let processedImage = imageBlob;
+    if (imageBlob.size > 800 * 1024) { // 800KB threshold
+      console.log('🔄 Image too large, resizing...');
+      processedImage = await resizeImage(imageBlob);
+    }
+    
     const formData = new FormData();
-    formData.append('file', imageBlob);
+    formData.append('file', processedImage);
     formData.append('apikey', apiKey);
     formData.append('OCREngine', '2'); // Engine 2 is better for plates
     formData.append('scale', 'true');
