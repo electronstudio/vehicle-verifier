@@ -44,7 +44,7 @@ const SetupGuide: Component<SetupGuideProps> = (props) => {
             <h3>Get your free DVLA API key</h3>
             <p>Register at the DVLA Developer Portal to get your API key</p>
             <a 
-              href="https://developer-portal.driver-vehicle-licensing.api.gov.uk" 
+              href="https://register-for-ves.driver-vehicle-licensing.api.gov.uk/"
               target="_blank" 
               class="button primary"
               rel="noopener noreferrer"
